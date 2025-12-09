@@ -5,6 +5,7 @@ The goal of this project is to integrate multiple hardware and software modules 
 Communication with the **Nextion LCD Display** is performed over UART, and all measurements and controls are combined into a single working system.
 
 ---
+<img width="3827" height="2815" alt="logic" src="https://github.com/user-attachments/assets/07f8dc1f-779d-44ab-a010-7181f09f0ba8" />
 
 ## 👩‍💻 Individual Tasks
 
