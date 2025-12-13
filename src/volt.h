@@ -4,6 +4,6 @@
 #include <stdint.h>
 
 void volt_init(void);
-uint16_t volt_read_mv(void);  // вернуть напряжение в милливольтах
+uint16_t volt_read_mv(void);  
 
 #endif

@@ -8,14 +8,25 @@ void nextion_init(void);
 void nextion_wait_for_values(uint32_t *d1, uint32_t *t1,
                              uint32_t *d2, uint32_t *t2);
 
-// Установить прогресс маршрута в процентах (0..100)
-// nProg – Progress Bar на странице 0
+void nextion_goto_page(uint8_t page);
+
 void nextion_set_progress(uint8_t percent);
 
-// Показать скорость (целое число) в компоненте nSpeed
-void nextion_set_speed(uint16_t speed);
+void nextion_set_speed(uint16_t speed_cm_s);
 
-// Показать напряжение (целое число) в компоненте tVolt
+void nextion_set_target_speed(uint16_t speed_cm_s);
+
+void nextion_set_distance(uint16_t dist_cm);
+
+void nextion_set_time(uint16_t seconds);
+
 void nextion_set_voltage(uint16_t mv);
 
-#endif // NEXTION_H
+void nextion_set_wall_e(uint8_t percent);
+
+
+void nextion_reset_start_button(void);
+
+
+
+#endif 

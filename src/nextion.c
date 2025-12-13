@@ -1,6 +1,18 @@
 #ifndef F_CPU
 #define F_CPU 16000000UL
+
 #endif
+
+#define WALLE_X_MIN      0    
+#define WALLE_X_MAX      280   
+#define WALLE_Y          156   
+#define WALLE_PIC_ID     0    
+
+#define WALLE_TRACK_X    0
+#define WALLE_TRACK_Y    140
+#define WALLE_TRACK_W    220   
+#define WALLE_TRACK_H    40    
+#define WALLE_BG_COLOR 65535U
 
 #include <avr/io.h>
 #include <util/delay.h>
@@ -9,8 +21,6 @@
 
 #include "usart.h"
 #include "nextion.h"
-
-// ---------- Внутренние функции ----------
 
 static void nx_send_cmd(const char *cmd)
 {
@@ -32,7 +42,7 @@ static uint8_t nx_read_byte(void)
     return (uint8_t)c;
 }
 
-// ---------- Публичные функции ----------
+// public
 
 void nextion_init(void)
 {
@@ -41,18 +51,22 @@ void nextion_init(void)
     printf("System started. Waiting for data frame from Nextion...\n");
 }
 
-// Ждём кадр: 0x55, 0x04, D1(4),T1(4),D2(4),T2(4), 0xAA
+void nextion_goto_page(uint8_t page)
+{
+    char buf[16];
+    snprintf(buf, sizeof(buf), "page %u", (unsigned)page);
+    nx_send_cmd(buf);
+}
+
 void nextion_wait_for_values(uint32_t *d1, uint32_t *t1,
                              uint32_t *d2, uint32_t *t2)
 {
     uint8_t b;
 
-    // 1) Стартовый байт
     do {
         b = nx_read_byte();
     } while (b != 0x55);
 
-    // 2) Кол-во чисел
     uint8_t count = nx_read_byte();
     if (count != 4)
         return;
@@ -81,21 +95,67 @@ void nextion_wait_for_values(uint32_t *d1, uint32_t *t1,
     *t2 = vals[3];
 }
 
-// page0.nProg.val = percent
+// page1.nProg.val
 void nextion_set_progress(uint8_t percent)
 {
     if (percent > 100) percent = 100;
-    printf("page0.nProg.val=%u%c%c%c", percent, 0xFF, 0xFF, 0xFF);
+    printf("page1.nProg.val=%u%c%c%c", percent, 0xFF, 0xFF, 0xFF);
 }
 
-// page0.nSpeed.val = speed
+// page1.nSpeed.val 
 void nextion_set_speed(uint16_t speed)
 {
-    printf("page0.nSpeed.val=%u%c%c%c", speed, 0xFF, 0xFF, 0xFF);
+    printf("page1.nSpeed.val=%u%c%c%c", speed, 0xFF, 0xFF, 0xFF);
 }
 
-// page0.tVolt.val = mv  (например, 7300 = 7.3V)
+// page1.nSpeedTarget.val
+void nextion_set_target_speed(uint16_t speed)
+{
+    printf("page1.nSpeedTarget.val=%u%c%c%c", speed, 0xFF, 0xFF, 0xFF);
+}
+
+// page1.nDist.val
+void nextion_set_distance(uint16_t dist_cm)
+{
+    printf("page1.nDist.val=%u%c%c%c", dist_cm, 0xFF, 0xFF, 0xFF);
+}
+
+// page1.nTime.val
+void nextion_set_time(uint16_t seconds)
+{
+    printf("page1.nTime.val=%u%c%c%c", seconds, 0xFF, 0xFF, 0xFF);
+}
+
+// page1.tVolt.val
 void nextion_set_voltage(uint16_t mv)
 {
-    printf("page0.tVolt.val=%u%c%c%c", mv, 0xFF, 0xFF, 0xFF);
+    printf("page1.tVolt.val=%u%c%c%c", mv, 0xFF, 0xFF, 0xFF);
+}
+
+//page1.picWalle.val
+void nextion_set_wall_e(uint8_t percent)
+{
+    if (percent > 100) percent = 100;
+
+    uint16_t x = WALLE_X_MIN +
+        (uint16_t)((uint32_t)(WALLE_X_MAX - WALLE_X_MIN) * percent / 100);
+
+    printf("fill %u,%u,%u,%u,%u%c%c%c",
+           WALLE_TRACK_X,
+           WALLE_TRACK_Y,
+           WALLE_TRACK_W,
+           WALLE_TRACK_H,
+           (unsigned int)WALLE_BG_COLOR, 
+           0xFF, 0xFF, 0xFF);
+
+    printf("pic %u,%u,%u%c%c%c",
+           x,
+           WALLE_Y,
+           WALLE_PIC_ID,
+           0xFF, 0xFF, 0xFF);
+}
+
+void nextion_reset_start_button(void)
+{
+    printf("page0.bStart.val=0%c%c%c", 0xFF, 0xFF, 0xFF);
 }
