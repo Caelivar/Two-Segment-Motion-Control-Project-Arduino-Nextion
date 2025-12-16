@@ -1,82 +1,172 @@
-# ⚙️ Mechatronics Semester Project 1 – D/E25
+# Two-Segment Motion Control (Arduino + Nextion)
+**BEng Course Project - time-constrained motion control with seamless two-segment transition**
 
-## 🎯 Project Overview
-The goal of this project is to integrate multiple hardware and software modules on the **ATmega328P (Arduino Nano)** platform to control and monitor a DC motor.  
-Communication with the **Nextion LCD Display** is performed over UART, and all measurements and controls are combined into a single working system.
-
----
-
+> Goal: drive a small vehicle through **two consecutive segments** defined by distance and time, **without stopping between segments**.
 <img width="3840" height="2160" alt="Page 1" src="https://github.com/user-attachments/assets/377337f6-da7f-4a39-b74d-b6a2a059b7d9" />
-
-
-
-## 👩‍💻 Individual Tasks
-
-### **Ario**
-- Display **two numbers** on the Nextion Display via UART.
-- One number must be an **integer**, and the other a **floating-point value** with decimal places.
-- Start testing with the **Nextion Debugger**, then verify on the **actual display**.
-
-### **Natalia**
-- Read an **integer input** from the Nextion Display via UART.
-- Start with the **Nextion Debugger**, then finalize on the **physical display**.
-
-### **Maks**
-- Measure **time between two holes** on the encoder wheel using the **optocoupler**.
-- Output the measured **time period** to the serial terminal.
-
-### **Andrii**
-- Configure and read voltage from **ADC0 (PC0)** pin.
-- Acceptable input range: **0–5 V**.
-- Display the measured voltage value in the **serial terminal** (for now).
-
-### **Milena**
-- Configure **PWM output** on **PD5 or PD6**.
-- Set the PWM **frequency** and **duty cycle to 20%**.
-- Connect output to **L298 motor driver** and observe **motor speed change**.
-
-### **Amanda**
-- Implement **button press detection** from the Nextion display (e.g. a “Start” button).
-- When pressed, begin system operation (e.g. measure and display motor speed).
-
-### **Haseeb**
-- Integrate all modules to:
-  - **Measure** and **calculate motor speed**.
-  - **Display** the speed value on the **Nextion LCD**.
+## Table of Contents
+- [Project Overview](#project-overview)
+- [What this project does](#what-this-project-does)
+- [Hardware](#hardware)
+- [Core Idea](#core-idea)
+- [Key Problems & Solutions](#key-problems--solutions)
+- [Calibration Mode](#calibration-mode)
+- [Notes](#notes)
+- [License](#license)
 
 ---
 
-## 🔌 Hardware Connections
+## Project Overview
+This project demonstrates a **time-constrained motion control system** using:
+- Arduino (Nano / ATmega328P)
+- DC motor + L298N driver
+- Optical encoder feedback
+- Nextion HMI for input + live telemetry
 
-| Component          | Arduino Pin | Description |
-|--------------------|--------------|-------------|
-| Optocoupler (ICP)  | **PB0 (D8)** | Input from encoder wheel |
-| Motor driver (L298) | **PD5 / PD6** | PWM control output |
-| Voltage sensor     | **PC0 (ADC0)** | Analog input (0–5 V) |
-| Nextion Display    | **PD0 / PD1** | UART TX/RX |
+The system executes **two segments back-to-back**:
 
----
+| Segment | Distance | Time |
+|--------:|----------|------|
+| 1 | `D1` | `T1` |
+| 2 | `D2` | `T2` |
 
-## 🧠 Programming Tasks
-
-1. **Enable UART Communication** with Nextion LCD  
-   - Test with Nextion Debugger before connecting physical display.
-
-2. **Implement PWM Output** to control motor speed  
-   - Set initial duty cycle to **20%**.
-
-3. **Enable Optocoupler Timing**  
-   - Measure time between encoder pulses to determine RPM.
-
-4. **Enable ADC Reading** from **PC0**  
-   - Read and later display battery voltage.
+✅ Key requirement: **reach the target distance within the given time** and **transition to segment 2 without pausing**.
 
 ---
 
-## 🚀 System Integration (Overall Goal)
+## What this project does
+- Reads motion parameters from a **Nextion touchscreen**
+- Drives a **DC motor using PWM**
+- Measures real speed & distance via **optical encoder**
+- Compensates for **non-linear motor behaviour**
+- Displays live status:
+  - progress
+  - speed (current / target)
+  - distance
+  - time
+  - voltage
+- Smoothly transitions between two motion segments
 
-- Get the **motor running** and control its **speed programmatically**.  
-- **Measure rotational speed** using the **optocoupler + encoder wheel**.  
-- **Display** both **motor speed (RPM)** and **voltage level** on the **Nextion LCD**.  
-- System should respond to the **“Start” button** on the Nextion screen.
+---
+
+## Hardware
+Current setup:
+
+- **Microcontroller:** Arduino Nano (ATmega328P)  
+- **Motor driver:** L298N H-bridge  
+- **Motor:** DC motor (12–24 W, unknown manufacturer)  
+- **Encoder:** Optical wheel (10 holes)  
+- **Wheel diameter:** 6.1 cm  
+- **Display:** Nextion NX3224K024  
+- **Voltage sensing:** ADC on A0 (voltage divider)
+
+---
+
+
+## Core Idea
+<img width="3840" height="2160" alt="Page 2" src="https://github.com/user-attachments/assets/d43c4625-fbf2-4df3-a121-d452f8a069f7" />
+
+Instead of directly calculating the “correct PWM” from distance and time, the algorithm:
+### 1) Measures real motion
+- **Distance** from encoder pulses  
+- **Speed** from **Timer1 Input Capture** (hardware timing)
+
+### 2) Continuously recalculates required speed
+At every update step:
+
+```c
+required_speed = remaining_distance / remaining_time; 
+```
+### 3) Compensates for non-linear motor behaviour
+The DC motor does **not** respond linearly to PWM duty.
+
+Small changes in duty cycle often produce **no change in speed**, while larger jumps suddenly switch the motor to another stable speed level.
+
+To handle this, a **calibration table** is used:
+
+- PWM duty → measured real speed
+- Values are obtained experimentally using encoder feedback
+- The table represents how the motor actually behaves, not how it *should* behave
+
+This allows the control logic to work in the **speed domain**, instead of blindly adjusting PWM.
+### 4) Uses duty mixing
+Even with calibration, many target speeds lie **between** two achievable motor speeds.
+
+Instead of forcing the motor to one of them, the system uses **duty mixing**:
+
+- Two neighbouring PWM duties are selected from the calibration table  
+- The motor is driven with these two duties in a defined ratio  
+- The **average speed** converges to the desired target speed
+
+This approach:
+- Avoids oscillations
+- Reduces sensitivity to motor dead zones
+- Provides smoother motion without complex control theory (PID)
+
+The result is **quasi-analog speed control** on top of a highly non-linear motor.
+
+---
+
+## Key Problems & Solutions
+
+### 1) Motor is highly non-linear
+Changing PWM duty did not result in proportional speed changes.
+
+In practice, the motor behaved as if it had only **a few discrete speed levels**.
+
+✅ **Solution:**  
+A **calibration table** combined with **duty mixing** was introduced, allowing the system to control **average speed** rather than raw PWM.
+
+---
+
+### 2) Encoder noise & false pulses
+PWM switching introduced electrical noise, causing the encoder to register **false (“ghost”) pulses**.
+
+✅ **Solution:**
+- Used **Timer1 Input Capture** for precise hardware timing  
+- Applied a **minimum pulse interval filter**  
+- Fully reset encoder counters and capture flags before each run  
+
+---
+
+### 3) Wrong distance on repeated runs
+Distance measurement was correct after flashing the firmware, but incorrect when starting a new run without resetting the Arduino.
+
+✅ **Solution:**
+- Fully reset **Timer1**, input capture registers, and internal state variables  
+- Added a short **settling delay** before motion start to stabilize measurements  
+
+---
+
+## Calibration Mode
+A dedicated firmware mode was created to experimentally identify real motor behaviour.
+
+Calibration procedure:
+- Sweep PWM duty values across the usable range  
+- Measure real speed using the encoder and Timer1  
+- Display measured speed and duty on the Nextion screen  
+
+The resulting data is manually transferred into the **motor calibration table** used by the main control firmware.
+
+This ensures the control algorithm is based on **measured reality**, not assumptions.
+
+---
+
+## Notes
+- This project is intended for **educational purposes**
+- Emphasis is placed on **robustness and observability**, not optimal control theory
+- The approach demonstrates how real-world hardware often violates ideal assumptions
+
+You are free to:
+- reuse the code  
+- modify the algorithms  
+- adapt the system for other motion-control tasks  
+
+If you have more questions, feel free to discord me: 
+```c
+.caelivar
+```
+---
+
+## License
+**MIT License** 
 
