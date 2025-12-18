@@ -4,19 +4,19 @@
 ![License](https://img.shields.io/github/license/Caelivar/Two-Segment-Motion-Control-Project-Arduino-Nextion)
 
 # Two-Segment Motion Control (Arduino + Nextion)
-**BEng Course Project - time-constrained motion control with seamless two-segment transition**
 
-> Goal: drive a small vehicle through **two consecutive segments** defined by distance and time, **without stopping between segments**.
-<img width="2560" height="1919" alt="image" src="https://github.com/user-attachments/assets/9d13c399-ccd6-46f6-bc62-13073abca2e9" />
+**BEng Course Project — time-constrained motion control with seamless two-segment transition**
 
-## Table of Contents
-- [Project Overview](#project-overview)
-- [What this project does](#what-this-project-does)
-- [Hardware](#hardware)
-- [Known Limitations](#known-limitations)
-- [Core Idea](#core-idea)
-- [Calibration Mode](#calibration-mode)
-- [Contributing](#contributing)
+> **Goal:** drive a small vehicle through **two consecutive segments** defined by distance and time,  
+> **without stopping between segments**.
+
+<p align="center">
+  <img
+    src="https://github.com/user-attachments/assets/9d13c399-ccd6-46f6-bc62-13073abca2e9"
+    alt="System overview"
+    width="80%"
+  />
+</p>
 
 ---
 
