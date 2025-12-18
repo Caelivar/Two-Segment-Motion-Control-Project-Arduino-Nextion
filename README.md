@@ -1,3 +1,8 @@
+![Platform](https://img.shields.io/badge/platform-Arduino-blue)
+![MCU](https://img.shields.io/badge/MCU-ATmega328P-green)
+![Display](https://img.shields.io/badge/UI-Nextion-orange)
+![License](https://img.shields.io/github/license/Caelivar/Two-Segment-Motion-Control-Project-Arduino-Nextion)
+
 # Two-Segment Motion Control (Arduino + Nextion)
 **BEng Course Project - time-constrained motion control with seamless two-segment transition**
 
