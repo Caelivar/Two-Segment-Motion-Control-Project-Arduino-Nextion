@@ -159,3 +159,19 @@ void nextion_reset_start_button(void)
 {
     printf("page0.bStart.val=0%c%c%c", 0xFF, 0xFF, 0xFF);
 }
+
+/*uint8_t nextion_check_abort(void)
+{
+    if (uart_available())
+    {
+        char buf[8] = {0};
+        uart_read_string(buf, sizeof(buf));
+
+        if (strcmp(buf, "ABORT") == 0)
+        {
+            g_abort_requested = 1;
+            return 1;
+        }
+    }
+    return 0;
+}*/

@@ -10,10 +10,10 @@ void motor_init(void)
 {
     DDRD |= (1 << PD6);
 
-    TCCR0A |= 0b10100011;
+    TCCR0A = (1 << WGM01) | (1 << WGM00) | (1 << COM0A1);
 
-    TCCR0B |= 0b00000101;
-
+    TCCR0B = (1 << CS01) | (1 << CS00);
+    
     OCR0A = 0;
 }
 
@@ -22,111 +22,75 @@ void motor_set_duty(uint8_t duty)
     OCR0A = duty;
 }
 
-uint8_t motor_compute_duty(uint32_t distance, uint32_t time)
-{
-    if (time == 0) return 0;
-    uint32_t speed_scaled = (distance * 100UL) / time;
-    if (speed_scaled > 100UL) speed_scaled = 100UL;
-
-    uint32_t duty = (speed_scaled * 255UL) / 100UL;
-    if (duty > 255UL) duty = 255UL;
-
-    return (uint8_t)duty;
-}
-
-/* =========================
-   Calibration table
-   speed_cm_s = cm/s
-   (calibration firmware speed_mps_x100 == cm/s)
-   points должны идти по возрастанию speed_cm_s
-   ========================= 
-
-typedef struct
-{
-    uint8_t  duty;         // 0..255
-    uint16_t speed_cm_s;   // cm/s
+typedef struct {
+    uint8_t  duty;
+    uint16_t speed_x10;
 } MotorCalPoint;
 
-/*
- * Test results
- * Exp.
- * duty 15 -> 12 cm/s  (0.12 m/s)
- * duty 35 -> 25 cm/s  (0.25 m/s)
- * ...
- 
 static const MotorCalPoint g_cal[] =
 {
-    {  15,  12 },
-    {  35,  25 },
-    {  55,  40 },
-    {  75,  55 },
-    {  95,  70 },
-    { 115,  82 },
-    { 135,  94 },
-    { 155, 105 },
-    { 175, 115 },
-    { 195, 124 },
-    { 215, 132 },
-    { 225, 136 },
+    {   0,   0   },   
+    {  15,   0   },
+    {  35,   0   },
+    {  55,  0   },
+    {  75,  20   },
+    {  95,  60   },
+    { 115, 60   },
+    { 135, 60   },
+    { 155, 80   },
+    { 175, 80   }, 
+    { 195, 80   },
+    { 225, 90   },
 };
 
-static const uint8_t g_cal_n = (uint8_t)(sizeof(g_cal) / sizeof(g_cal[0]));
 
-// Ilnear inter. (x0,y0) и (x1,y1) для x
-static uint8_t lerp_u8(uint16_t x, uint16_t x0, uint8_t y0, uint16_t x1, uint8_t y1)
+static const uint8_t g_cal_n =
+    sizeof(g_cal) / sizeof(g_cal[0]);
+
+static uint16_t clamp_u16(uint16_t v, uint16_t lo, uint16_t hi)
 {
-    if (x1 <= x0) return y0;
-
-    // y = y0 + (y1-y0)*(x-x0)/(x1-x0)
-    int16_t dy = (int16_t)y1 - (int16_t)y0;
-    uint16_t dx = x1 - x0;
-    uint16_t t  = x - x0;
-
-    int32_t num = (int32_t)dy * (int32_t)t;
-    int32_t y   = (int32_t)y0 + (num / (int32_t)dx);
-
-    if (y < 0)   y = 0;
-    if (y > 255) y = 255;
-    return (uint8_t)y;
+    if (v < lo) return lo;
+    if (v > hi) return hi;
+    return v;
 }
 
-uint8_t motor_duty_from_speed_cm_s(uint16_t target_speed_cm_s)
+MotorMixPlan motor_plan_from_speed_x10(uint16_t target)
 {
-    if (g_cal_n == 0) return 0;
+    MotorMixPlan plan = {0, 0, 0};
 
-    // min
-    if (target_speed_cm_s <= g_cal[0].speed_cm_s)
-        return g_cal[0].duty;
+    if (target <= g_cal[0].speed_x10)
+    {
+        plan.duty_low = g_cal[0].duty;
+        plan.duty_high = g_cal[0].duty;
+        plan.alpha_x1000 = 0;
+        return plan;
+    }
 
-    // max
-    if (target_speed_cm_s >= g_cal[g_cal_n - 1].speed_cm_s)
-        return g_cal[g_cal_n - 1].duty;
+    if (target >= g_cal[g_cal_n - 1].speed_x10)
+    {
+        plan.duty_low = g_cal[g_cal_n - 1].duty;
+        plan.duty_high = g_cal[g_cal_n - 1].duty;
+        plan.alpha_x1000 = 0;
+        return plan;
+    }
 
-    // find segment [i-1, i] where speed lays inner
     for (uint8_t i = 1; i < g_cal_n; i++)
     {
-        uint16_t s0 = g_cal[i - 1].speed_cm_s;
-        uint16_t s1 = g_cal[i].speed_cm_s;
+        uint16_t v0 = g_cal[i - 1].speed_x10;
+        uint16_t v1 = g_cal[i].speed_x10;
 
-        if (target_speed_cm_s <= s1)
+        if (target <= v1 && v1 > v0)
         {
-            uint8_t d0 = g_cal[i - 1].duty;
-            uint8_t d1 = g_cal[i].duty;
-            return lerp_u8(target_speed_cm_s, s0, d0, s1, d1);
+            plan.duty_low = g_cal[i - 1].duty;
+            plan.duty_high = g_cal[i].duty;
+
+            uint16_t num = (target - v0) * 1000UL;
+            uint16_t den = (v1 - v0);
+
+            plan.alpha_x1000 = clamp_u16(num / den, 0, 1000);
+            return plan;
         }
     }
 
-    // in case of error
-    return g_cal[g_cal_n - 1].duty;
+    return plan;
 }
-
-uint8_t motor_compute_duty(uint32_t distance_cm, uint32_t time_s)
-{
-    if (time_s == 0) return 0;
-
-    // target speed в cm/s
-    uint16_t target_speed_cm_s = (uint16_t)((distance_cm + (time_s / 2)) / time_s);
-
-    return motor_duty_from_speed_cm_s(target_speed_cm_s);
-} */
-

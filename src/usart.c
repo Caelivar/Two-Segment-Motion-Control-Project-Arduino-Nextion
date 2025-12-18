@@ -19,17 +19,13 @@ static FILE uart_input  = FDEV_SETUP_STREAM(NULL, uart_getchar_stdio, _FDEV_SETU
 
 void uart_init(void)
 {
-    //double speed
     UCSR0A |= (1 << U2X0);
 
-    // diveder
     UBRR0H = (uint8_t)(UBRR_VALUE >> 8);
     UBRR0L = (uint8_t)(UBRR_VALUE & 0xFF);
 
-    // allow-TX/RX
     UCSR0B = (1 << RXEN0) | (1 << TXEN0);
 
-    // 8N1
     UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);
 }
 
@@ -68,4 +64,14 @@ static int uart_getchar_stdio(FILE *stream)
 {
     (void)stream;
     return uart_getchar();
+}
+
+uint8_t uart_available(void)
+{
+    return (UCSR0A & (1 << RXC0)) ? 1 : 0;
+}
+
+uint8_t uart_read_byte(void)
+{
+    return UDR0;
 }

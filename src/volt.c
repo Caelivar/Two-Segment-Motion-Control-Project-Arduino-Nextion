@@ -17,7 +17,6 @@ void volt_init(void)
 
 uint16_t volt_read_mv(void)
 {
-    // A0 (ADC0)
     ADMUX = (ADMUX & 0xF0) | 0;
 
     ADCSRA |= (1 << ADSC);

@@ -5,6 +5,8 @@
 
 void nextion_init(void);
 
+uint8_t nextion_check_abort(void);
+
 void nextion_wait_for_values(uint32_t *d1, uint32_t *t1,
                              uint32_t *d2, uint32_t *t2);
 
@@ -26,6 +28,7 @@ void nextion_set_wall_e(uint8_t percent);
 
 
 void nextion_reset_start_button(void);
+
 
 
 
