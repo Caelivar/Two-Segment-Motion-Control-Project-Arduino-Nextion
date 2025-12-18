@@ -2,16 +2,15 @@
 **BEng Course Project - time-constrained motion control with seamless two-segment transition**
 
 > Goal: drive a small vehicle through **two consecutive segments** defined by distance and time, **without stopping between segments**.
-<img width="3840" height="2160" alt="Page 1" src="https://github.com/user-attachments/assets/377337f6-da7f-4a39-b74d-b6a2a059b7d9" />
+<img width="2560" height="1919" alt="image" src="https://github.com/user-attachments/assets/9d13c399-ccd6-46f6-bc62-13073abca2e9" />
+
 ## Table of Contents
 - [Project Overview](#project-overview)
 - [What this project does](#what-this-project-does)
 - [Hardware](#hardware)
 - [Core Idea](#core-idea)
-- [Key Problems & Solutions](#key-problems--solutions)
 - [Calibration Mode](#calibration-mode)
 - [Notes](#notes)
-- [License](#license)
 
 ---
 
@@ -63,7 +62,7 @@ Current setup:
 
 
 ## Core Idea
-<img width="3840" height="2160" alt="Page 2" src="https://github.com/user-attachments/assets/d43c4625-fbf2-4df3-a121-d452f8a069f7" />
+<img width="3840" height="2160" alt="Page 1" src="https://github.com/user-attachments/assets/377337f6-da7f-4a39-b74d-b6a2a059b7d9" />
 
 Instead of directly calculating the “correct PWM” from distance and time, the algorithm:
 ### 1) Measures real motion
@@ -88,6 +87,7 @@ To handle this, a **calibration table** is used:
 - The table represents how the motor actually behaves, not how it *should* behave
 
 This allows the control logic to work in the **speed domain**, instead of blindly adjusting PWM.
+<img width="3840" height="2160" alt="Page 2" src="https://github.com/user-attachments/assets/d43c4625-fbf2-4df3-a121-d452f8a069f7" />
 ### 4) Uses duty mixing
 Even with calibration, many target speeds lie **between** two achievable motor speeds.
 
@@ -105,40 +105,10 @@ This approach:
 The result is **quasi-analog speed control** on top of a highly non-linear motor.
 
 ---
-
-## Key Problems & Solutions
-
-### 1) Motor is highly non-linear
-Changing PWM duty did not result in proportional speed changes.
-
-In practice, the motor behaved as if it had only **a few discrete speed levels**.
-
-✅ **Solution:**  
-A **calibration table** combined with **duty mixing** was introduced, allowing the system to control **average speed** rather than raw PWM.
-
----
-
-### 2) Encoder noise & false pulses
-PWM switching introduced electrical noise, causing the encoder to register **false (“ghost”) pulses**.
-
-✅ **Solution:**
-- Used **Timer1 Input Capture** for precise hardware timing  
-- Applied a **minimum pulse interval filter**  
-- Fully reset encoder counters and capture flags before each run  
-
----
-
-### 3) Wrong distance on repeated runs
-Distance measurement was correct after flashing the firmware, but incorrect when starting a new run without resetting the Arduino.
-
-✅ **Solution:**
-- Fully reset **Timer1**, input capture registers, and internal state variables  
-- Added a short **settling delay** before motion start to stabilize measurements  
-
----
-
 ## Calibration Mode
 A dedicated firmware mode was created to experimentally identify real motor behaviour.
+
+Can be found on this branch: https://github.com/Caelivar/Two-Segment-Motion-Control-Project-Arduino-Nextion/tree/Data-Collection
 
 Calibration procedure:
 - Sweep PWM duty values across the usable range  
@@ -166,7 +136,4 @@ If you have more questions, feel free to discord me:
 .caelivar
 ```
 ---
-
-## License
-**MIT License** 
 
