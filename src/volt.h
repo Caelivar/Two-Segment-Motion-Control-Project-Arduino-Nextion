@@ -4,6 +4,6 @@
 #include <stdint.h>
 
 void volt_init(void);
-uint16_t volt_read_mv(void);  
+uint16_t volt_read_mv(void);
 
 #endif

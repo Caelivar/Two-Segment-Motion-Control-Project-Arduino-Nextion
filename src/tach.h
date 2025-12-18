@@ -12,5 +12,4 @@ float tach_get_distance_cm(void);
 void  tach_reset_distance(void);
 void  tach_reset(void);
 
-
 #endif

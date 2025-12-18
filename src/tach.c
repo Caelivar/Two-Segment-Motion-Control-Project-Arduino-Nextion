@@ -14,7 +14,6 @@
 
 #define T1_TICK_S          (1024.0f / (float)F_CPU)
 
-
 #define MIN_TICKS          80U
 
 static volatile float    g_speed_cm_s   = 0.0f;
@@ -38,11 +37,8 @@ void tach_update(void)
     if (TIFR1 & (1 << ICF1))
     {
         uint16_t ticks = ICR1;
-
         TCNT1 = 0;
-
         TIFR1 = (1 << ICF1);
-
         if (ticks < MIN_TICKS)
         {
             return;
@@ -79,5 +75,5 @@ void tach_reset(void)
     g_speed_cm_s  = 0.0f;
 
     TCNT1 = 0;
-    TIFR1 = (1 << ICF1);   
+    TIFR1 = (1 << ICF1);
 }
