@@ -13,9 +13,10 @@
 - [Project Overview](#project-overview)
 - [What this project does](#what-this-project-does)
 - [Hardware](#hardware)
+- [Known Limitations](#known-limitations)
 - [Core Idea](#core-idea)
 - [Calibration Mode](#calibration-mode)
-- [Notes](#notes)
+- [Contributing](#contributing)
 
 ---
 
@@ -64,7 +65,12 @@ Current setup:
 - **Voltage sensing:** ADC on A0 (voltage divider)
 
 ---
+## Known Limitations
 
+- Motor calibration is hardware-specific
+- Speed accuracy depends on encoder alignment
+- No closed-loop PID (feed-forward correction only)
+---
 
 ## Core Idea
 <img width="3840" height="2160" alt="Page 1" src="https://github.com/user-attachments/assets/377337f6-da7f-4a39-b74d-b6a2a059b7d9" />
@@ -126,19 +132,25 @@ This ensures the control algorithm is based on **measured reality**, not assumpt
 
 ---
 
-## Notes
-- This project is intended for **educational purposes**
-- Emphasis is placed on **robustness and observability**, not optimal control theory
-- The approach demonstrates how real-world hardware often violates ideal assumptions
+## Contributing
 
-You are free to:
-- reuse the code  
-- modify the algorithms  
-- adapt the system for other motion-control tasks  
+Contributions are welcome!
+
+You can help by:
+- improving documentation
+- fixing bugs
+- optimizing control logic
+- extending UI features
+
+Please:
+- keep code style consistent
+- describe changes clearly in pull requests
+
 
 If you have more questions, feel free to discord me: 
 ```c
 .caelivar
 ```
 ---
+
 
